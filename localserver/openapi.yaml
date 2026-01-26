@@ -1,0 +1,170 @@
+openapi: 3.0.3
+info:
+  title: Silero TTS Bot API
+  description: REST API for text-to-speech generation via Telegram bot
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:{port}
+    description: Local server
+    variables:
+      port:
+        default: '8080'
+        description: Server port configured in UI
+
+security:
+  - BearerAuth: []
+
+paths:
+  /voices:
+    get:
+      summary: Get available voices
+      description: Returns list of all saved voice presets
+      operationId: getVoices
+      tags:
+        - Voices
+      responses:
+        '200':
+          description: List of voice presets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VoicePreset'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /speech:
+    post:
+      summary: Generate speech from text
+      description: |
+        Generates MP3 audio from the given text using specified voice.
+        Requests are processed sequentially with a queue limit of 3.
+
+        If the specified voice differs from current, the bot voice is changed
+        automatically and a notification is shown in the UI.
+      operationId: generateSpeech
+      tags:
+        - Speech
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeechRequest'
+      responses:
+        '200':
+          description: MP3 audio file
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/QueueFull'
+        '413':
+          $ref: '#/components/responses/TextTooLong'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Token
+
+  schemas:
+    VoicePreset:
+      type: object
+      required:
+        - name
+        - code
+      properties:
+        name:
+          type: string
+          description: Display name of the voice preset
+          example: "Male Voice 1"
+        code:
+          type: string
+          description: Voice variant code for bot command
+          example: "aidar"
+
+    SpeechRequest:
+      type: object
+      required:
+        - input
+      properties:
+        input:
+          type: string
+          description: Text to convert to speech (max 1000 characters)
+          minLength: 1
+          maxLength: 1000
+          example: "Hello, world!"
+        voice:
+          type: string
+          description: Voice code from /voices list
+          example: "aidar"
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Voice not found"
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - invalid or missing token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Invalid authorization token"
+
+    BadRequest:
+      description: Bad request - invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Voice 'invalid' not found"
+
+    QueueFull:
+      description: Queue full - too many concurrent requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Request queue is full (3/3). Try again later."
+
+    TextTooLong:
+      description: Text too long - exceeds 1000 characters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Text exceeds maximum length of 1000 characters"
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Failed to generate speech"

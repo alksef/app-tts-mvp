@@ -1,0 +1,48 @@
+[package]
+name = "app-tts"
+version = "0.1.0"
+description = "Tab+Esc Switcher - Windows keyboard interceptor"
+authors = ["you"]
+license = ""
+repository = ""
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0", features = ["tray-icon", "image-png"] }
+tauri-plugin-shell = "2.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Input",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+    "Win32_System_Com",
+    "Win32_System_Registry",
+    "Win32_Media_Audio",
+    "implement",
+] }
+tokio = { version = "1.35", features = ["sync", "rt-multi-thread", "time"] }
+sapi-lite = "0.1"
+uuid = { version = "1.6", features = ["v4", "serde"] }
+reqwest = { version = "0.12", features = ["json"] }
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+rodio = { version = "0.19", features = ["symphonia-mp3"] }
+cpal = "0.15"
+libloading = "0.8"
+
+[dependencies.plugins-api]
+path = "../plugins-api"
+
+[features]
+# This feature is used for production builds or when a dev server is not available, to avoid static file watching issues
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

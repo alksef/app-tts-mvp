@@ -1,0 +1,17 @@
+[package]
+name = "file-logger-plugin"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+plugins-api = { path = "../../plugins-api" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dependencies.chrono]
+version = "0.4"
+default-features = false
+features = ["clock"]
